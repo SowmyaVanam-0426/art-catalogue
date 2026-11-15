@@ -114,12 +114,23 @@ pipeline {
                     $class: 'AmazonWebServicesCredentialsBinding',
                     credentialsId: 'aws'
                 ]]) {
+                    
                 sh '''
-                    aws eks update-kubeconfig \
-                      --region "$AWS_REGION" \
-                      --name "$EKS_CLUSTER"
+                   unset KUBECONFIG
+                   export KUBECONFIG="$HOME/.kube/config"
 
-                    kubectl get nodes
+                aws eks update-kubeconfig \
+                  --region "$AWS_REGION" \
+                  --name "$EKS_CLUSTER"
+
+                echo "Current Kubernetes context:"
+                kubectl config current-context
+
+                echo "Available contexts:"
+                kubectl config get-contexts
+
+                echo "EKS nodes:"
+                kubectl get nodes
                 '''
                 }   
             }
