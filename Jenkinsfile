@@ -14,6 +14,7 @@ pipeline {
         ECR_FRONTEND = 'art-catalogue-frontend'
         DB_SECRET = 'art-catalogue/dev/database'
         K8S_NAMESPACE = 'art-catalogue'
+        KUBECONFIG = '/var/lib/jenkins/.kube/config'
     }
 
     stages {
