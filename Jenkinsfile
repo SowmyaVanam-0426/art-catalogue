@@ -1,4 +1,4 @@
-
+```groovy
 pipeline {
     agent any
 
@@ -15,28 +15,7 @@ pipeline {
         DB_SECRET = 'art-catalogue/dev/database'
         K8S_NAMESPACE = 'art-catalogue'
     }
-    options {
-        timestamps()
-        disableConcurrentBuilds()
-    }
 
-    stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
-        }
-
-        stage('Configure AWS Credentials') {
-            steps {
-                withCredentials([[
-                    $class: 'AmazonWebServicesCredentialsBinding',
-                    credentialsId: 'aws'
-                ]]) {
-                    sh 'aws sts get-caller-identity'
-                }
-            }
-        }
     stages {
 
         stage('Checkout') {
@@ -46,23 +25,22 @@ pipeline {
         }
 
         stage('Test Backend') {
-    steps {
-        dir('backend') {
-            sh '''
-                echo "=== Java executable ==="
-                which java
-                java -version
-                echo "JAVA_HOME=$JAVA_HOME"
-                which mvn
-                mvn -version
-                javac -version
+            steps {
+                dir('backend') {
+                    sh '''
+                        echo "=== Java ==="
+                        java -version
+                        javac -version
 
-                mvn -B clean test
-            '''
+                        echo "=== Maven ==="
+                        mvn -version
+
+                        mvn -B clean test
+                    '''
+                }
+            }
         }
-    }
-}
-           
+
         stage('Build Frontend') {
             steps {
                 dir('frontend') {
@@ -76,17 +54,22 @@ pipeline {
 
         stage('Prepare AWS and Image Names') {
             steps {
-                script {
-                    env.AWS_ACCOUNT_ID = sh(
-                        script: 'aws sts get-caller-identity --query Account --output text',
-                        returnStdout: true
-                    ).trim()
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws'
+                ]]) {
+                    script {
+                        env.AWS_ACCOUNT_ID = sh(
+                            script: 'aws sts get-caller-identity --query Account --output text',
+                            returnStdout: true
+                        ).trim()
 
-                    env.BACKEND_IMAGE =
-                        "${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.ECR_BACKEND}:${env.BUILD_NUMBER}"
+                        env.BACKEND_IMAGE =
+                            "${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.ECR_BACKEND}:${env.BUILD_NUMBER}"
 
-                    env.FRONTEND_IMAGE =
-                        "${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.ECR_FRONTEND}:${env.BUILD_NUMBER}"
+                        env.FRONTEND_IMAGE =
+                            "${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.ECR_FRONTEND}:${env.BUILD_NUMBER}"
+                    }
                 }
             }
         }
@@ -114,106 +97,131 @@ pipeline {
 
         stage('Push Images to ECR') {
             steps {
-                sh '''
-                    aws ecr get-login-password --region "$AWS_REGION" |
-                    docker login \
-                      --username AWS \
-                      --password-stdin \
-                      "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws'
+                ]]) {
+                    sh '''
+                        aws ecr get-login-password --region "$AWS_REGION" |
+                        docker login \
+                          --username AWS \
+                          --password-stdin \
+                          "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
 
-                    docker push "$BACKEND_IMAGE"
-                    docker push "$FRONTEND_IMAGE"
-                '''
+                        docker push "$BACKEND_IMAGE"
+                        docker push "$FRONTEND_IMAGE"
+                    '''
+                }
             }
         }
 
         stage('Configure Kubernetes Access') {
             steps {
-                sh '''
-                    aws eks update-kubeconfig \
-                      --region "$AWS_REGION" \
-                      --name "$EKS_CLUSTER"
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws'
+                ]]) {
+                    sh '''
+                        aws eks update-kubeconfig \
+                          --region "$AWS_REGION" \
+                          --name "$EKS_CLUSTER"
 
-                    kubectl get nodes
-                '''
+                        kubectl get nodes
+                    '''
+                }
             }
         }
 
         stage('Prepare Database Secret') {
             steps {
-                sh '''
-                    set +x
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws'
+                ]]) {
+                    sh '''
+                        set +x
 
-                    SECRET_JSON=$(aws secretsmanager get-secret-value \
-                      --region "$AWS_REGION" \
-                      --secret-id "$DB_SECRET" \
-                      --query SecretString \
-                      --output text)
+                        SECRET_JSON=$(aws secretsmanager get-secret-value \
+                          --region "$AWS_REGION" \
+                          --secret-id "$DB_SECRET" \
+                          --query SecretString \
+                          --output text)
 
-                    DB_USERNAME=$(printf '%s' "$SECRET_JSON" | jq -r '.username')
-                    DB_PASSWORD=$(printf '%s' "$SECRET_JSON" | jq -r '.password')
-                    DB_HOST=$(printf '%s' "$SECRET_JSON" | jq -r '.host')
-                    DB_PORT=$(printf '%s' "$SECRET_JSON" | jq -r '.port')
-                    DB_NAME=$(printf '%s' "$SECRET_JSON" | jq -r '.database')
+                        DB_USERNAME=$(printf '%s' "$SECRET_JSON" | jq -r '.username')
+                        DB_PASSWORD=$(printf '%s' "$SECRET_JSON" | jq -r '.password')
+                        DB_HOST=$(printf '%s' "$SECRET_JSON" | jq -r '.host')
+                        DB_PORT=$(printf '%s' "$SECRET_JSON" | jq -r '.port')
+                        DB_NAME=$(printf '%s' "$SECRET_JSON" | jq -r '.database')
 
-                    kubectl create namespace "$K8S_NAMESPACE" \
-                      --dry-run=client -o yaml | kubectl apply -f -
+                        kubectl create namespace "$K8S_NAMESPACE" \
+                          --dry-run=client -o yaml | kubectl apply -f -
 
-                    kubectl create secret generic db-credentials \
-                      --namespace "$K8S_NAMESPACE" \
-                      --from-literal=username="$DB_USERNAME" \
-                      --from-literal=password="$DB_PASSWORD" \
-                      --from-literal=host="$DB_HOST" \
-                      --from-literal=port="$DB_PORT" \
-                      --from-literal=database="$DB_NAME" \
-                      --dry-run=client -o yaml |
-                      kubectl apply -f -
+                        kubectl create secret generic db-credentials \
+                          --namespace "$K8S_NAMESPACE" \
+                          --from-literal=username="$DB_USERNAME" \
+                          --from-literal=password="$DB_PASSWORD" \
+                          --from-literal=host="$DB_HOST" \
+                          --from-literal=port="$DB_PORT" \
+                          --from-literal=database="$DB_NAME" \
+                          --dry-run=client -o yaml |
+                          kubectl apply -f -
 
-                    unset SECRET_JSON DB_USERNAME DB_PASSWORD
-                    unset DB_HOST DB_PORT DB_NAME
-                '''
+                        unset SECRET_JSON DB_USERNAME DB_PASSWORD
+                        unset DB_HOST DB_PORT DB_NAME
+                    '''
+                }
             }
         }
 
         stage('Deploy to EKS') {
             steps {
-                sh '''
-                    kubectl apply -f k8s/namespace.yml
-                    kubectl apply -f k8s/configmap.yml
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws'
+                ]]) {
+                    sh '''
+                        kubectl apply -f k8s/namespace.yml
+                        kubectl apply -f k8s/configmap.yml
 
-                    export BACKEND_IMAGE
-                    export FRONTEND_IMAGE
+                        export BACKEND_IMAGE
+                        export FRONTEND_IMAGE
 
-                    envsubst '${BACKEND_IMAGE}' \
-                      < k8s/backend-deployment.yml |
-                      kubectl apply -f -
+                        envsubst '${BACKEND_IMAGE}' \
+                          < k8s/backend-deployment.yml |
+                          kubectl apply -f -
 
-                    kubectl apply -f k8s/backend-service.yml
+                        kubectl apply -f k8s/backend-service.yml
 
-                    envsubst '${FRONTEND_IMAGE}' \
-                      < k8s/frontend-deployment.yml |
-                      kubectl apply -f -
+                        envsubst '${FRONTEND_IMAGE}' \
+                          < k8s/frontend-deployment.yml |
+                          kubectl apply -f -
 
-                    kubectl apply -f k8s/frontend-service.yml
+                        kubectl apply -f k8s/frontend-service.yml
 
-                    kubectl apply -f k8s/ingress.yml
-                '''
+                        kubectl apply -f k8s/ingress.yml
+                    '''
+                }
             }
         }
 
         stage('Verify Deployment') {
             steps {
-                sh '''
-                    kubectl rollout status deployment/backend \
-                      -n "$K8S_NAMESPACE" --timeout=300s
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws'
+                ]]) {
+                    sh '''
+                        kubectl rollout status deployment/backend \
+                          -n "$K8S_NAMESPACE" --timeout=300s
 
-                    kubectl rollout status deployment/frontend \
-                      -n "$K8S_NAMESPACE" --timeout=300s
+                        kubectl rollout status deployment/frontend \
+                          -n "$K8S_NAMESPACE" --timeout=300s
 
-                    kubectl get pods -n "$K8S_NAMESPACE"
-                    kubectl get services -n "$K8S_NAMESPACE"
-                    kubectl get ingress -n "$K8S_NAMESPACE"
-                '''
+                        kubectl get pods -n "$K8S_NAMESPACE"
+                        kubectl get services -n "$K8S_NAMESPACE"
+                        kubectl get ingress -n "$K8S_NAMESPACE"
+                    '''
+                }
             }
         }
     }
@@ -234,3 +242,4 @@ pipeline {
         }
     }
 }
+```
