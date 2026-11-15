@@ -211,6 +211,10 @@ pipeline {
 
         stage('Verify Deployment') {
             steps {
+                                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws'
+                ]]) {
                 sh '''
                     kubectl rollout status deployment/backend \
                       -n "$K8S_NAMESPACE" --timeout=300s
@@ -222,6 +226,7 @@ pipeline {
                     kubectl get services -n "$K8S_NAMESPACE"
                     kubectl get ingress -n "$K8S_NAMESPACE"
                 '''
+                }
             }
         }
     }
