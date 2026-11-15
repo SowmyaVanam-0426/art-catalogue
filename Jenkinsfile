@@ -45,22 +45,23 @@ pipeline {
 
         stage('Prepare AWS and Image Names') {
              steps {
-                withCredentials([[
+                                withCredentials([[
                     $class: 'AmazonWebServicesCredentialsBinding',
-                    credentialsId: 'aws'   ]])
-                script {
-                    env.AWS_ACCOUNT_ID = sh(
-                        script: 'aws sts get-caller-identity --query Account --output text',
-                        returnStdout: true
-                    ).trim()
+                    credentialsId: 'aws'
+                ]]) {
+                    script {
+                        env.AWS_ACCOUNT_ID = sh(
+                            script: 'aws sts get-caller-identity --query Account --output text',
+                            returnStdout: true
+                        ).trim()
 
-                    env.BACKEND_IMAGE =
-                        "${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.ECR_BACKEND}:${env.BUILD_NUMBER}"
+                        env.BACKEND_IMAGE =
+                            "${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.ECR_BACKEND}:${env.BUILD_NUMBER}"
 
-                    env.FRONTEND_IMAGE =
-                        "${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.ECR_FRONTEND}:${env.BUILD_NUMBER}"
+                        env.FRONTEND_IMAGE =
+                            "${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.ECR_FRONTEND}:${env.BUILD_NUMBER}"
+                    }
                 }
-            }
         }
 
         stage('Build Docker Images') {
@@ -205,4 +206,5 @@ pipeline {
             '''
         }
     }
+}
 }
