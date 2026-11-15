@@ -93,7 +93,7 @@ pipeline {
                                 withCredentials([[
                     $class: 'AmazonWebServicesCredentialsBinding',
                     credentialsId: 'aws'
-                ]])
+                ]]) {
                 sh '''
                     aws ecr get-login-password --region "$AWS_REGION" |
                     docker login \
@@ -104,7 +104,8 @@ pipeline {
                     docker push "$BACKEND_IMAGE"
                     docker push "$FRONTEND_IMAGE"
                 '''
-            }
+                }
+           }
         }
 
         stage('Configure Kubernetes Access') {
