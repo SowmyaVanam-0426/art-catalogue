@@ -25,12 +25,22 @@ pipeline {
         }
 
         stage('Test Backend') {
-            steps {
-                dir('backend') {
-                    sh 'mvn -B clean test'
-                }
-            }
+    steps {
+        dir('backend') {
+            sh '''
+                echo "=== Java executable ==="
+                which java
+                java -version
+                echo "JAVA_HOME=$JAVA_HOME"
+                which mvn
+                mvn -version
+                javac -version
+
+                mvn -B clean test
+            '''
         }
+    }
+}
 
         stage('Build Frontend') {
             steps {
