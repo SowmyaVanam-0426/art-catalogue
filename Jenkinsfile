@@ -60,9 +60,10 @@ pipeline {
 
                         env.FRONTEND_IMAGE =
                             "${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.ECR_FRONTEND}:${env.BUILD_NUMBER}"
+                        }
                     }
                 }
-        }
+           }
 
         stage('Build Docker Images') {
             steps {
@@ -206,5 +207,4 @@ pipeline {
             '''
         }
     }
-}
 }
