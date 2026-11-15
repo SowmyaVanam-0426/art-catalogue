@@ -77,10 +77,12 @@ pipeline {
         stage('Trivy Security Scan') {
             steps {
                 sh '''
-                    trivy image --timeout 20m \
+                   trivy image \
+                     --timeout 20m \
                       --severity HIGH,CRITICAL "$BACKEND_IMAGE"
 
-                    trivy --timeout 20m \
+                    trivy image \
+                     --timeout 20m \
                       --severity HIGH,CRITICAL "$FRONTEND_IMAGE"
                 '''
             }
