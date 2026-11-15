@@ -15,7 +15,28 @@ pipeline {
         DB_SECRET = 'art-catalogue/dev/database'
         K8S_NAMESPACE = 'art-catalogue'
     }
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+    }
 
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Configure AWS Credentials') {
+            steps {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws'
+                ]]) {
+                    sh 'aws sts get-caller-identity'
+                }
+            }
+        }
     stages {
 
         stage('Checkout') {
@@ -41,7 +62,7 @@ pipeline {
         }
     }
 }
-
+           
         stage('Build Frontend') {
             steps {
                 dir('frontend') {
