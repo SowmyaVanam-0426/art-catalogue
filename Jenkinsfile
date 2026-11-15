@@ -110,6 +110,10 @@ pipeline {
 
         stage('Configure Kubernetes Access') {
             steps {
+                                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws'
+                ]]) {
                 sh '''
                     aws eks update-kubeconfig \
                       --region "$AWS_REGION" \
@@ -117,11 +121,16 @@ pipeline {
 
                     kubectl get nodes
                 '''
+                }   
             }
         }
 
         stage('Prepare Database Secret') {
             steps {
+                                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws'
+                ]]) {
                 sh '''
                     set +x
 
@@ -153,11 +162,16 @@ pipeline {
                     unset SECRET_JSON DB_USERNAME DB_PASSWORD
                     unset DB_HOST DB_PORT DB_NAME
                 '''
+                }
             }
         }
 
         stage('Deploy to EKS') {
             steps {
+                                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws'
+                ]]) {
                 sh '''
                     kubectl apply -f k8s/namespace.yml
                     kubectl apply -f k8s/configmap.yml
@@ -179,6 +193,7 @@ pipeline {
 
                     kubectl apply -f k8s/ingress.yml
                 '''
+                }
             }
         }
 
