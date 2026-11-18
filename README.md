@@ -115,7 +115,8 @@ The pipeline is designed to automate the following stages:
 ## Kubernetes Deployment
 
 ![Varnam](images/3ks.png)
-![Varnam](images/4clusterpng)
+
+![Varnam](images/4cluster.png)
 
 The application is deployed in a dedicated Kubernetes namespace:
 
