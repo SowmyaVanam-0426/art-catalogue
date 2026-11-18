@@ -1,10 +1,8 @@
-# Art Catalogue – AWS DevOps Project
+# Art Catalogue - End-to-End AWS DevOps Automation: Terraform, Jenkins, Docker, ECR, EKS, Kubernetes & PostgreSQL
 ![Varnam](images/1.png)
 
 
-A cloud-native Art Catalogue application built to demonstrate end-to-end DevOps practices using **AWS, Terraform, Docker, Jenkins, Kubernetes and CI/CD automation**.
-
-The project focuses on infrastructure provisioning, containerization, automated builds, security scanning, container registry management and Kubernetes deployments.
+A cloud-native Art Catalogue application built to demonstrate end-to-end DevOps usecase **Terraform-Based AWS Infrastructure Provisioning & Jenkins CI/CD Pipeline for Dockerized Microservices Deployment on Amazon EKS with  ECR, RDS PostgreSQL, Kubernetes and Trivy Security Scanning**
 
 ## Architecture
 
