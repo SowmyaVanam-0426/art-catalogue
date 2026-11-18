@@ -253,18 +253,6 @@ This project demonstrates practical experience with:
 - Secrets management and IAM-based access control.
 - Application health checks and deployment verification.
 
-## Future Improvements
-
-- Install and configure AWS Load Balancer Controller.
-- Implement GitOps deployments using Argo CD.
-- Integrate Prometheus and Grafana for monitoring.
-- Add SonarQube for static code analysis.
-- Implement Terraform remote state with S3 and state locking.
-- Improve IAM permissions using least-privilege access.
-- Add automated rollback and deployment strategies.
-
----
-
 **Author:** Sowmya
 
 **Project:** Art Catalogue – AWS DevOps Portfolio Project

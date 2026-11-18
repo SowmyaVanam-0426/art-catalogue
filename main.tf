@@ -14,9 +14,6 @@ provider "aws" {
   region = "ap-southeast-2"
 }
 
-# -------------------------
-# VPC
-# -------------------------
 
 resource "aws_vpc" "main" {
   cidr_block           = "10.0.0.0/16"
@@ -28,9 +25,8 @@ resource "aws_vpc" "main" {
   }
 }
 
-# -------------------------
 # Public Subnets
-# -------------------------
+
 
 resource "aws_subnet" "public_1" {
   vpc_id                  = aws_vpc.main.id
@@ -56,9 +52,8 @@ resource "aws_subnet" "public_2" {
   }
 }
 
-# -------------------------
+
 # Private Application Subnets
-# -------------------------
 
 resource "aws_subnet" "private_app_1" {
   vpc_id            = aws_vpc.main.id
@@ -82,9 +77,8 @@ resource "aws_subnet" "private_app_2" {
   }
 }
 
-# -------------------------
 # Private Database Subnets
-# -------------------------
+
 
 resource "aws_subnet" "private_db_1" {
   vpc_id            = aws_vpc.main.id
@@ -118,9 +112,9 @@ resource "aws_internet_gateway" "main" {
   }
 }
 
-# -------------------------
+
 # Public Route Table
-# -------------------------
+
 
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
@@ -145,9 +139,9 @@ resource "aws_route_table_association" "public_2" {
   route_table_id = aws_route_table.public.id
 }
 
-# -------------------------
+
 # NAT Gateway
-# -------------------------
+
 
 resource "aws_eip" "nat" {
   domain = "vpc"
@@ -168,9 +162,9 @@ resource "aws_nat_gateway" "main" {
   }
 }
 
-# -------------------------
+
 # Private Application Route Table
-# -------------------------
+
 
 resource "aws_route_table" "private_app" {
   vpc_id = aws_vpc.main.id
@@ -195,9 +189,9 @@ resource "aws_route_table_association" "private_app_2" {
   route_table_id = aws_route_table.private_app.id
 }
 
-# -------------------------
+
 # Private Database Route Table
-# -------------------------
+
 
 resource "aws_route_table" "private_db" {
   vpc_id = aws_vpc.main.id
@@ -217,9 +211,8 @@ resource "aws_route_table_association" "private_db_2" {
   route_table_id = aws_route_table.private_db.id
 }
 
-# -------------------------
 # EKS Cluster IAM Role
-# -------------------------
+
 
 resource "aws_iam_role" "eks_cluster" {
   name = "art-catalogue-eks-cluster-role"
@@ -241,9 +234,9 @@ resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
 }
 
-# -------------------------
+
 # EKS Worker Node IAM Role
-# -------------------------
+
 
 resource "aws_iam_role" "eks_nodes" {
   name = "art-catalogue-eks-node-role"
@@ -275,9 +268,8 @@ resource "aws_iam_role_policy_attachment" "eks_ecr" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
-# -------------------------
+
 # EKS Cluster
-# -------------------------
 
 resource "aws_eks_cluster" "main" {
   name     = "art-catalogue-dev"
@@ -310,9 +302,8 @@ resource "aws_eks_cluster" "main" {
   }
 }
 
-# -------------------------
+
 # EKS Managed Node Group
-# -------------------------
 
 resource "aws_eks_node_group" "main" {
   cluster_name    = aws_eks_cluster.main.name
@@ -346,9 +337,7 @@ resource "aws_eks_node_group" "main" {
   }
 }
 
-# -------------------------
-# EKS Add-ons
-# -------------------------
+
 
 resource "aws_eks_addon" "vpc_cni" {
   cluster_name = aws_eks_cluster.main.name
@@ -378,9 +367,7 @@ resource "aws_eks_addon" "pod_identity" {
   depends_on = [aws_eks_node_group.main]
 }
 
-# -------------------------
-# ECR Repositories
-# -------------------------
+
 
 resource "aws_ecr_repository" "backend" {
   name                 = "art-catalogue-backend"
@@ -416,9 +403,6 @@ resource "aws_ecr_repository" "frontend" {
   }
 }
 
-# -------------------------
-# RDS Security Group
-# -------------------------
 
 resource "aws_security_group" "rds" {
   name        = "art-catalogue-rds-sg"
@@ -445,9 +429,7 @@ resource "aws_security_group" "rds" {
   }
 }
 
-# -------------------------
-# RDS Subnet Group
-# -------------------------
+
 
 resource "aws_db_subnet_group" "main" {
   name = "art-catalogue-db-subnets"
@@ -462,9 +444,6 @@ resource "aws_db_subnet_group" "main" {
   }
 }
 
-# -------------------------
-# RDS Password
-# -------------------------
 
 resource "random_password" "db" {
   length  = 20
@@ -504,9 +483,8 @@ final_snapshot_identifier = "art-catalogue-final-20261116"
   }
 }
 
-# -------------------------
 # Secrets Manager
-# -------------------------
+
 
 resource "aws_secretsmanager_secret" "db" {
   name                    = "art-catalogue/dev/database"
@@ -529,9 +507,9 @@ resource "aws_secretsmanager_secret_version" "db" {
   })
 }
 
-# -------------------------
+
 # Outputs
-# -------------------------
+
 
 output "vpc_id" {
   value = aws_vpc.main.id
