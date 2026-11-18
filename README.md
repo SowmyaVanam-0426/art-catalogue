@@ -1,4 +1,6 @@
 # Art Catalogue – AWS DevOps Project
+![Varnam](images/1.png)
+
 
 A cloud-native Art Catalogue application built to demonstrate end-to-end DevOps practices using **AWS, Terraform, Docker, Jenkins, Kubernetes and CI/CD automation**.
 
@@ -105,7 +107,15 @@ The pipeline is designed to automate the following stages:
 10. **Deployment Verification**
     - Checks Kubernetes rollout status and application resources.
 
+----
+
+## Running Successful Jenkins build##
+![Varnam](images/2cicd.png)
+
 ## Kubernetes Deployment
+
+![Varnam](images/3ks.png)
+![Varnam](images/4clusterpng)
 
 The application is deployed in a dedicated Kubernetes namespace:
 
