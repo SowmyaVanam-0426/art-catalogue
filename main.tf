@@ -485,6 +485,9 @@ resource "aws_db_instance" "main" {
   max_allocated_storage = 50
   storage_type          = "gp3"
   storage_encrypted     = true
+  skip_final_snapshot       = false
+final_snapshot_identifier = "art-catalogue-final-20261116"
+
 
   db_name  = "artcatalogue"
   username = "artcatalogue"
